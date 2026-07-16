@@ -1,0 +1,37 @@
+version: 1
+app: tf_web_whatsapp_contact
+
+image:
+  registry: us-prod-acr-registry-vpc.us-east-1.cr.aliyuncs.com
+  namespace: ok-backend
+  repository: tf_web_whatsapp_contact
+  tag: bootstrap
+  dockerfile: Dockerfile
+  context: .
+  buildArgs: {}
+
+kubernetes:
+  test:
+    namespace: ok-backend
+    manifests:
+      - k8s/us-east/test/pvc.yaml
+      - k8s/us-east/test/deployment.yaml
+      - k8s/us-east/test/service.yaml
+    workloads:
+      - kind: Deployment
+        name: tf-web-whatsapp-contact-test
+        containers:
+          - web
+
+  prod:
+    enabled: true
+    namespace: ok-backend
+    manifests:
+      - k8s/us-east/prod/pvc.yaml
+      - k8s/us-east/prod/deployment.yaml
+      - k8s/us-east/prod/service.yaml
+    workloads:
+      - kind: Deployment
+        name: tf-web-whatsapp-contact
+        containers:
+          - web

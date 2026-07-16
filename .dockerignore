@@ -1,0 +1,11 @@
+.git
+.gitignore
+.DS_Store
+.wwebjs_cache
+node_modules
+frontend/node_modules
+frontend/dist
+server/config/default.json
+storage
+*.log
+.quickdeploy

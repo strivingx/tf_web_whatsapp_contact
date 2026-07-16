@@ -165,7 +165,7 @@ class WhatsAppManager {
 
       const socket = baileys.default({
         auth: state,
-        browser: baileys.Browsers.ubuntu("WhatsApp Contact Manager"),
+        browser: baileys.Browsers.ubuntu("TF Web WhatsApp Contact"),
         logger: this.logger,
         markOnlineOnConnect: false,
         printQRInTerminal: false,

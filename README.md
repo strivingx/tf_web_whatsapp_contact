@@ -1,4 +1,4 @@
-# WhatsApp 建联管理平台
+# TF Web WhatsApp Contact
 
 独立 Node.js 平台，用 Express + React/Vite + MySQL 管理多个 WhatsApp 账号，并通过 [Baileys](https://github.com/WhiskeySockets/Baileys) 执行单发、批量文本建联与消息同步。
 
@@ -56,6 +56,36 @@ Baileys 通过 WhatsApp Web 的多设备 WebSocket 协议工作，不启动 Chro
 - 本地配置已被 `.gitignore` 忽略，真实 MySQL 密码不会进入仓库。
 - `whatsapp.syncFullHistory` 控制是否接收 WhatsApp Web 历史同步；历史量较大时可设为 `false`，实时收发不受影响。
 - `whatsapp.logLevel`、重连退避和历史请求超时均可在示例配置中调整。
+
+## QuickDeploy / 阿里云部署
+
+仓库已包含 QuickDeploy 所需的 `Dockerfile`、`aliyun-api.yaml` 以及
+`k8s/us-east/` 清单。先在目标命名空间创建对应环境的配置 Secret：
+
+```bash
+kubectl -n ok-backend create secret generic tf-web-whatsapp-contact-test-config \
+  --from-file=default.json=/secure/path/test.default.json
+kubectl -n ok-backend create secret generic tf-web-whatsapp-contact-config \
+  --from-file=default.json=/secure/path/prod.default.json
+```
+
+配置文件需将 `whatsapp.authDataPath` 设为
+`/app/storage/baileys_auth`；示例见 `k8s/us-east/*/secret.example.yaml`。
+部署清单会创建各环境独立的持久卷声明，用于保存 WhatsApp 登录凭据。
+如集群没有默认 StorageClass，请在对应 `pvc.yaml` 中设置
+`storageClassName` 后再部署。
+
+```bash
+export KUBEFORGE_API_TOKEN='your-token'
+npm --prefix ../quickdeploy run deploy -- \
+  --repo git@github.com:strivingx/tf_web_whatsapp_contact.git \
+  --ref master \
+  --region us-east \
+  --mode test
+```
+
+生产发布将 `--mode` 改为 `prod` 或 `all`。该应用只允许单副本并使用
+`Recreate` 策略，避免发布期间两个 Pod 同时连接同一 WhatsApp 账号。
 
 ## 风险提示
 

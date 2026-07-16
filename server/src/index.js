@@ -97,7 +97,7 @@ if (require.main === module) {
   createApp()
     .then((app) => {
       app.listen(config.server.port, () => {
-        console.log(`WhatsApp contact manager listening on http://localhost:${config.server.port}`);
+        console.log(`TF Web WhatsApp Contact listening on http://localhost:${config.server.port}`);
       });
     })
     .catch((error) => {

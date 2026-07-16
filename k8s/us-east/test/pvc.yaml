@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tf-web-whatsapp-contact-test-data
+  labels:
+    app.kubernetes.io/name: tf-web-whatsapp-contact-test
+    app.kubernetes.io/part-of: tf-web-whatsapp-contact
+    app.kubernetes.io/environment: test
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # Set storageClassName when the cluster has no default StorageClass.
+  # storageClassName: alicloud-disk-essd
