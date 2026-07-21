@@ -12,4 +12,5 @@ spec:
   storageClassName: alicloud-disk-topology-alltype
   resources:
     requests:
-      storage: 5Gi
+      # Alibaba Cloud disks provisioned by this StorageClass require at least 20Gi.
+      storage: 20Gi
