@@ -233,7 +233,6 @@ function LoginView({ onLogin }: { onLogin: (user: User) => void }) {
       <form className="login-panel" onSubmit={submit}>
         <div>
           <p className="eyebrow">WhatsApp Contact</p>
-          <h1>建联工作台</h1>
         </div>
         <label>
           管理员
@@ -592,7 +591,6 @@ export default function App() {
       <header className="topbar">
         <div>
           <p className="eyebrow">WhatsApp Contact</p>
-          <h1>建联工作台</h1>
         </div>
         <div className="topbar-actions">
           <div className="current-pill">
