@@ -82,7 +82,7 @@ kubectl -n ok-backend create secret generic tf-web-whatsapp-contact-secrets \
 ```bash
 export KUBEFORGE_API_TOKEN='your-token'
 npm --prefix ../quickdeploy run deploy -- \
-  --repo git@github.com:strivingx/tf_web_whatsapp_contact.git \
+  --repo git@github.com:ai-native-closer/tf_web_whatsapp_contact.git \
   --ref master \
   --region us-east \
   --mode test
