@@ -71,8 +71,8 @@ kubectl -n ok-backend create secret generic tf-web-whatsapp-contact-secrets \
 ```
 
 生产环境变量示例见 `k8s/us-east/prod/secret.example.yaml`；至少要填写
-`APP_SESSION_SECRET`、`APP_DB_HOST`、`APP_DB_USER`、`APP_DB_PASSWORD`、
-`APP_DB_NAME`、`APP_ADMIN_PASSWORD`。`APP_WHATSAPP_AUTH_DATA_PATH` 必须为
+`SESSION_SECRET`、`DB_HOST`、`DB_USER`、`DB_PASSWORD`、
+`DB_NAME`、`ADMIN_PASSWORD`。`WHATSAPP_AUTH_DATA_PATH` 必须为
 `/app/storage/baileys_auth`。测试环境配置文件和示例仍见
 `k8s/us-east/test/secret.example.yaml`。
 部署清单会创建各环境独立的持久卷声明，用于保存 WhatsApp 登录凭据。
