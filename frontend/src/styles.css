@@ -369,6 +369,26 @@ h3 {
   height: 34px;
 }
 
+.pending-scan-accounts {
+  margin-top: 12px;
+  border: 1px solid #d7e7dd;
+  border-radius: 8px;
+  background: #f8fbf9;
+  padding: 10px 12px;
+}
+
+.pending-scan-accounts summary {
+  cursor: pointer;
+  color: #526071;
+  font-weight: 700;
+}
+
+.pending-scan-accounts p {
+  margin: 10px 0;
+  color: #6d8077;
+  font-size: 13px;
+}
+
 .badge {
   min-height: 22px;
   display: inline-flex;

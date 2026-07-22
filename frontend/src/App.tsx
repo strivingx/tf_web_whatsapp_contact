@@ -89,6 +89,10 @@ function defaultScanName() {
   return `扫码账号 ${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
 
+function isPendingScanAccount(account: Account) {
+  return !account.lastSeenAt && ["new", "initializing", "qr", "pairing", "authenticated", "disconnected", "logged_out", "auth_failure"].includes(account.loginState);
+}
+
 function conversationTitle(conversation: Conversation) {
   return conversation.contactName || conversation.contactPhone || conversation.chatId;
 }
@@ -286,6 +290,9 @@ export default function App() {
   const currentRuntime = currentAccount?.runtime || null;
   const currentReady = Boolean(currentRuntime?.ready);
   const recipients = useMemo(() => splitRecipients(batchText), [batchText]);
+  const pendingScanAccounts = useMemo(() => accounts.filter(isPendingScanAccount), [accounts]);
+  const savedAccounts = useMemo(() => accounts.filter((account) => !isPendingScanAccount(account)), [accounts]);
+  const reusableScanAccount = pendingScanAccounts[0] || null;
 
   useEffect(() => {
     if (!conversationDetail) {
@@ -334,9 +341,12 @@ export default function App() {
       setConversationDetail(null);
     }
 
-    if (activeLoginAccountId && !accountResult.accounts.some((account) => account.id === activeLoginAccountId)) {
-      setActiveLoginAccountId(null);
-      setPairingCode(null);
+    if (activeLoginAccountId) {
+      const activeAccount = accountResult.accounts.find((account) => account.id === activeLoginAccountId);
+      if (!activeAccount || activeAccount.loginState === "ready") {
+        setActiveLoginAccountId(null);
+        setPairingCode(null);
+      }
     }
   }
 
@@ -464,26 +474,80 @@ export default function App() {
   async function addAccount(event: FormEvent) {
     event.preventDefault();
     await runAction(async () => {
-      const result = await api.createAccount(newAccount);
+      const result = reusableScanAccount
+        ? await api.updateAccount(reusableScanAccount.id, {
+          displayName: newAccount.displayName.trim() || reusableScanAccount.displayName,
+          phoneHint: newAccount.phoneHint.trim() || reusableScanAccount.phoneHint || undefined,
+          remark: newAccount.remark.trim() || reusableScanAccount.remark || undefined
+        })
+        : await api.createAccount(newAccount);
       setNewAccount({ displayName: "", phoneHint: "", remark: "" });
       setActiveLoginAccountId(result.account.id);
       setPairingCode(null);
       await api.qrLogin(result.account.id);
       await refreshAll(null);
-    }, "账号已添加，正在生成二维码");
+    }, reusableScanAccount ? "已更新待扫码账号，正在生成二维码" : "账号已添加，正在生成二维码");
   }
 
   async function scanAddAccount() {
     await runAction(async () => {
-      const result = await api.createAccount({
+      const account = reusableScanAccount || (await api.createAccount({
         displayName: defaultScanName(),
         remark: "扫码添加"
-      });
-      setActiveLoginAccountId(result.account.id);
+      })).account;
+      setActiveLoginAccountId(account.id);
       setPairingCode(null);
-      await api.qrLogin(result.account.id);
+      await api.qrLogin(account.id);
       await refreshAll(null);
-    }, "正在生成二维码");
+    }, reusableScanAccount ? "正在继续未完成的扫码" : "正在生成二维码");
+  }
+
+  function renderAccountCard(account: Account) {
+    return (
+      <article className={`row-card ${account.isCurrent ? "row-card-active" : ""}`} key={account.id}>
+        <div className="row-head">
+          <div className="row-main">
+            <strong>{account.displayName}</strong>
+            <span>{account.phoneHint || account.accountId}</span>
+          </div>
+          <div className="row-meta">
+            <StatusBadge value={account.status} />
+            <StatusBadge value={account.loginState} />
+          </div>
+        </div>
+        <div className="row-actions">
+          <IconButton title="切换账号" onClick={() => runAction(async () => { await api.switchAccount(account.id); await refreshAll(null); })} disabled={account.status !== "enabled"} tone="primary">
+            <Power size={17} />
+          </IconButton>
+          <IconButton title="扫码登录" onClick={() => runAction(async () => { setActiveLoginAccountId(account.id); setPairingCode(null); await api.qrLogin(account.id); await refreshAll(null); }, "正在生成二维码")} disabled={account.status !== "enabled"} tone="primary">
+            <QrCode size={17} />
+          </IconButton>
+          <IconButton title="配对码登录" onClick={() => { setActiveLoginAccountId(account.id); setPairingCode(null); }} disabled={account.status !== "enabled"}>
+            <KeyRound size={17} />
+          </IconButton>
+          {account.status === "enabled" ? (
+            <IconButton title="禁用账号" onClick={() => runAction(async () => { await api.disableAccount(account.id); await refreshAll(null); })}>
+              <PauseCircle size={17} />
+            </IconButton>
+          ) : (
+            <IconButton title="启用账号" onClick={() => runAction(async () => { await api.enableAccount(account.id); await refreshAll(null); })}>
+              <PlayCircle size={17} />
+            </IconButton>
+          )}
+          <IconButton
+            title="删除账号"
+            tone="danger"
+            onClick={() => {
+              if (window.confirm(`确认删除账号 ${account.displayName}？`)) {
+                runAction(async () => { await api.deleteAccount(account.id); await refreshAll(null); }, "账号已删除");
+              }
+            }}
+          >
+            <Trash2 size={17} />
+          </IconButton>
+        </div>
+      </article>
+    );
   }
 
   async function loadCsv(file: File | null) {
@@ -616,7 +680,7 @@ export default function App() {
               <StatusBadge value={currentReady ? "ready" : "disconnected"} />
               <TextIconButton title="扫码添加 WhatsApp 账号" onClick={scanAddAccount} tone="primary">
                 <QrCode size={17} />
-                扫码添加
+                {reusableScanAccount ? "继续扫码" : "扫码添加"}
               </TextIconButton>
             </div>
           </div>
@@ -644,52 +708,15 @@ export default function App() {
           </form>
 
           <div className="list">
-            {accounts.map((account) => (
-              <article className={`row-card ${account.isCurrent ? "row-card-active" : ""}`} key={account.id}>
-                <div className="row-head">
-                  <div className="row-main">
-                    <strong>{account.displayName}</strong>
-                    <span>{account.phoneHint || account.accountId}</span>
-                  </div>
-                  <div className="row-meta">
-                    <StatusBadge value={account.status} />
-                    <StatusBadge value={account.loginState} />
-                  </div>
-                </div>
-                <div className="row-actions">
-                  <IconButton title="切换账号" onClick={() => runAction(async () => { await api.switchAccount(account.id); await refreshAll(null); })} disabled={account.status !== "enabled"} tone="primary">
-                    <Power size={17} />
-                  </IconButton>
-                  <IconButton title="扫码登录" onClick={() => runAction(async () => { setActiveLoginAccountId(account.id); setPairingCode(null); await api.qrLogin(account.id); await refreshAll(null); }, "正在生成二维码")} disabled={account.status !== "enabled"} tone="primary">
-                    <QrCode size={17} />
-                  </IconButton>
-                  <IconButton title="配对码登录" onClick={() => { setActiveLoginAccountId(account.id); setPairingCode(null); }} disabled={account.status !== "enabled"}>
-                    <KeyRound size={17} />
-                  </IconButton>
-                  {account.status === "enabled" ? (
-                    <IconButton title="禁用账号" onClick={() => runAction(async () => { await api.disableAccount(account.id); await refreshAll(null); })}>
-                      <PauseCircle size={17} />
-                    </IconButton>
-                  ) : (
-                    <IconButton title="启用账号" onClick={() => runAction(async () => { await api.enableAccount(account.id); await refreshAll(null); })}>
-                      <PlayCircle size={17} />
-                    </IconButton>
-                  )}
-                  <IconButton
-                    title="删除账号"
-                    tone="danger"
-                    onClick={() => {
-                      if (window.confirm(`确认删除账号 ${account.displayName}？`)) {
-                        runAction(async () => { await api.deleteAccount(account.id); await refreshAll(null); }, "账号已删除");
-                      }
-                    }}
-                  >
-                    <Trash2 size={17} />
-                  </IconButton>
-                </div>
-              </article>
-            ))}
+            {savedAccounts.map(renderAccountCard)}
           </div>
+          {pendingScanAccounts.length > 0 && (
+            <details className="pending-scan-accounts">
+              <summary>未完成扫码（{pendingScanAccounts.length}）</summary>
+              <p>这些账号尚未成功登录，默认不显示在账号主列表。可继续扫码或删除不再需要的记录。</p>
+              <div className="list">{pendingScanAccounts.map(renderAccountCard)}</div>
+            </details>
+          )}
         </section>
 
         <section className="panel chat-panel">
