@@ -654,6 +654,15 @@ class WhatsAppManager {
       messageId: sent.key.id
     };
   }
+
+  async isRegisteredPhone(phoneNumber) {
+    const runtime = this.current;
+    if (!runtime || runtime.state !== "ready" || !runtime.socket) {
+      throw new Error("Current WhatsApp account is not ready");
+    }
+    const candidates = await runtime.socket.onWhatsApp(normalizePhone(phoneNumber));
+    return Boolean(candidates && candidates.some((candidate) => candidate.exists));
+  }
 }
 
 module.exports = {

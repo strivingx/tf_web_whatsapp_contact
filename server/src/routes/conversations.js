@@ -253,6 +253,9 @@ function createConversationsRouter(pool, manager, messageStore, jobQueue, leadCl
     const { account } = await getCurrentAccount(pool, manager, false);
     const phoneNumber = normalizePhone(req.body.phoneNumber);
     const contactName = String(req.body.contactName || "").trim() || null;
+    if (!await manager.isRegisteredPhone(phoneNumber)) {
+      throw badRequest("Recipient is not registered on WhatsApp");
+    }
     const conversation = await messageStore.upsertConversation(account.id, toChatId(phoneNumber), {
       contactPhone: phoneNumber,
       contactName
