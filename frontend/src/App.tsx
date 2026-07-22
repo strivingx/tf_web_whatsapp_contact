@@ -572,6 +572,8 @@ export default function App() {
     await runAction(async () => {
       const detail = await api.createConversation(newConversation);
       setNewConversation({ phoneNumber: "", contactName: "" });
+      selectedConversationIdRef.current = detail.conversation.id;
+      setSelectedConversationId(detail.conversation.id);
       setConversationDetail(detail);
       const [conversationResult, reachResult] = await Promise.all([api.conversations(), api.reachList()]);
       setConversations(conversationResult.conversations);
