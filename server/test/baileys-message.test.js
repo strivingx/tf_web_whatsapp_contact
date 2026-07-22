@@ -39,6 +39,7 @@ test("normalizes an inbound Baileys text message for the existing message store"
     body: "你好",
     type: "extendedTextMessage",
     timestamp: 1700000000,
+    timestampEstimated: false,
     hasMedia: false,
     mimetype: null,
     filename: null,
@@ -46,6 +47,22 @@ test("normalizes an inbound Baileys text message for the existing message store"
     mediaMetadata: null,
     chatId: "8613800138000@s.whatsapp.net"
   });
+});
+
+test("marks messages without a Baileys timestamp as estimated", () => {
+  const message = toStoredMessage({
+    key: {
+      id: "message-no-timestamp",
+      remoteJid: "8613800138000@s.whatsapp.net",
+      fromMe: false
+    },
+    message: {
+      conversation: "补发消息"
+    }
+  }, "8613900138000@s.whatsapp.net", helpers);
+
+  assert.equal(message.timestampEstimated, true);
+  assert.equal(Number.isFinite(message.timestamp), true);
 });
 
 test("normalizes media metadata without persisting the media encryption key", () => {

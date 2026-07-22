@@ -98,6 +98,7 @@ function toStoredMessage(message, ownJid, helpers) {
     ? (ownJid || null)
     : (key.participantAlt || key.participant || key.remoteJid);
   const recipientId = fromMe ? key.remoteJid : (ownJid || null);
+  const originalTimestamp = numberValue(message.messageTimestamp);
 
   return {
     id: { _serialized: key.id },
@@ -106,7 +107,8 @@ function toStoredMessage(message, ownJid, helpers) {
     to: recipientId,
     body: textFromMessage(type, content),
     type,
-    timestamp: numberValue(message.messageTimestamp) || Math.floor(Date.now() / 1000),
+    timestamp: originalTimestamp || Math.floor(Date.now() / 1000),
+    timestampEstimated: !originalTimestamp,
     hasMedia: MEDIA_MESSAGE_TYPES.has(type),
     mimetype: value.mimetype || null,
     filename: value.fileName || null,

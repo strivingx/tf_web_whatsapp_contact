@@ -184,32 +184,39 @@ class MessageStore {
   }
 
   async updateConversationFromMessage(conversationId, message, waDate, direction, countUnread) {
+    const hasOriginalTimestamp = !message.timestampEstimated;
+
     await this.pool.execute(
       `
         UPDATE wa_conversations
         SET
-          last_message_text = CASE WHEN last_message_at IS NULL OR last_message_at <= ? THEN ? ELSE last_message_text END,
-          last_message_type = CASE WHEN last_message_at IS NULL OR last_message_at <= ? THEN ? ELSE last_message_type END,
-          last_message_direction = CASE WHEN last_message_at IS NULL OR last_message_at <= ? THEN ? ELSE last_message_direction END,
-          last_message_at = CASE WHEN last_message_at IS NULL OR last_message_at <= ? THEN ? ELSE last_message_at END,
+          last_message_text = CASE WHEN ? AND (last_message_at IS NULL OR last_message_at <= ?) THEN ? ELSE last_message_text END,
+          last_message_type = CASE WHEN ? AND (last_message_at IS NULL OR last_message_at <= ?) THEN ? ELSE last_message_type END,
+          last_message_direction = CASE WHEN ? AND (last_message_at IS NULL OR last_message_at <= ?) THEN ? ELSE last_message_direction END,
+          last_message_at = CASE WHEN ? AND (last_message_at IS NULL OR last_message_at <= ?) THEN ? ELSE last_message_at END,
           unread_count = unread_count + ?,
           history_cursor_at = CASE
-            WHEN history_cursor_at IS NULL OR history_cursor_at > ? THEN ?
+            WHEN ? AND (history_cursor_at IS NULL OR history_cursor_at > ?) THEN ?
             ELSE history_cursor_at
           END,
           updated_at = NOW()
         WHERE id = ?
       `,
       [
+        hasOriginalTimestamp,
         toMysqlDate(waDate),
         messageSummary(message),
+        hasOriginalTimestamp,
         toMysqlDate(waDate),
         message.type || "chat",
+        hasOriginalTimestamp,
         toMysqlDate(waDate),
         direction,
+        hasOriginalTimestamp,
         toMysqlDate(waDate),
         toMysqlDate(waDate),
         direction === "inbound" && countUnread ? 1 : 0,
+        hasOriginalTimestamp,
         toMysqlDate(waDate),
         toMysqlDate(waDate),
         conversationId
