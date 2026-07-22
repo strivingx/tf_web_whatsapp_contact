@@ -31,7 +31,7 @@ spec:
               containerPort: 8003
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /wa/manager/api/health
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -39,7 +39,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /wa/manager/api/health
               port: http
             initialDelaySeconds: 30
             periodSeconds: 20

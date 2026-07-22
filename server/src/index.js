@@ -20,6 +20,9 @@ const { runMigrations } = require("./migrate");
 const { requireAuth } = require("./http");
 const { WhatsAppManager } = require("./whatsapp-manager");
 
+const managerBasePath = "/wa/manager";
+const managerApiPath = `${managerBasePath}/api`;
+
 async function createApp() {
   await runMigrations();
   const pool = getPool();
@@ -47,7 +50,7 @@ async function createApp() {
     }
   }));
 
-  app.get("/api/health", async (req, res) => {
+  app.get(`${managerApiPath}/health`, async (req, res) => {
     await pool.execute("SELECT 1");
     res.json({
       ok: true,
@@ -55,20 +58,20 @@ async function createApp() {
     });
   });
 
-  app.use("/api/auth", createAuthRouter(pool));
-  app.use("/api/accounts", requireAuth, createAccountsRouter(pool, manager));
-  app.use("/api/messages", requireAuth, createMessagesRouter(pool, manager, jobQueue));
-  app.use("/api/jobs", requireAuth, createJobsRouter(pool, manager, jobQueue, messageStore));
-  app.use("/api/conversations", requireAuth, createConversationsRouter(pool, manager, messageStore, jobQueue, leadClassifier));
+  app.use(`${managerApiPath}/auth`, createAuthRouter(pool));
+  app.use(`${managerApiPath}/accounts`, requireAuth, createAccountsRouter(pool, manager));
+  app.use(`${managerApiPath}/messages`, requireAuth, createMessagesRouter(pool, manager, jobQueue));
+  app.use(`${managerApiPath}/jobs`, requireAuth, createJobsRouter(pool, manager, jobQueue, messageStore));
+  app.use(`${managerApiPath}/conversations`, requireAuth, createConversationsRouter(pool, manager, messageStore, jobQueue, leadClassifier));
 
   const frontendDist = path.join(appRoot, "frontend/dist");
   if (fs.existsSync(frontendDist)) {
-    app.use(express.static(frontendDist));
-    app.get("*", (req, res) => {
+    app.use(managerBasePath, express.static(frontendDist));
+    app.get(`${managerBasePath}/*`, (req, res) => {
       res.sendFile(path.join(frontendDist, "index.html"));
     });
   } else {
-    app.get("/", (req, res) => {
+    app.get(`${managerBasePath}/`, (req, res) => {
       res.status(503).send("Frontend is not built. Run npm run build first.");
     });
   }

@@ -43,8 +43,9 @@ Baileys 通过 WhatsApp Web 的多设备 WebSocket 协议工作，不启动 Chro
 ## Baileys 聊天能力
 
 - 每个账号都有独立的多文件凭据目录，位于 `whatsapp.authDataPath/<clientId>`；请将该目录视为登录凭据，勿提交或共享。
-- 扫码登录 API 保持为 `POST /api/accounts/:id/login/qr`，前端会轮询账号状态并渲染 Baileys 返回的二维码。
-- 配对码 API 为 `POST /api/accounts/:id/login/pairing-code`，手机号必须包含国家码且只含数字。
+- 管理页面访问路径为 `/wa/manager/`；所有接口均以 `/wa/manager/api/` 为前缀。
+- 扫码登录 API 为 `POST /wa/manager/api/accounts/:id/login/qr`，前端会轮询账号状态并渲染 Baileys 返回的二维码。
+- 配对码 API 为 `POST /wa/manager/api/accounts/:id/login/pairing-code`，手机号必须包含国家码且只含数字。
 - 登录成功后，服务会保存实时收发消息；启用 `syncFullHistory` 时也会保存 Baileys 下发的历史消息。会话页的“加载更早”会请求按需历史同步。
 - 发消息前会通过 Baileys 查询目标号码是否已注册 WhatsApp。发送、队列、会话、审计与现有前端接口保持不变。
 - Baileys 7 使用 `@s.whatsapp.net` JID；数据库迁移 `V5` 会将旧版 `@c.us` 记录转换为新格式。
